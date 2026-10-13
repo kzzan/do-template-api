@@ -1,15 +1,10 @@
-.PHONY: run migration build test vet tidy up down proto clean
+.PHONY: run migration build test vet tidy up down clean
 
 up:
 	docker compose up -d
 
 down:
 	docker compose down
-
-proto:
-	protoc --go_out=. --go_opt=module=do-template-api \
-		--go-grpc_out=. --go-grpc_opt=module=do-template-api \
-		api/proto/userv1/user.proto
 
 run:
 	go run ./cmd/server -conf config/local.yml

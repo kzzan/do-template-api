@@ -22,7 +22,6 @@ import (
 // Package 注册本层全部服务。
 var Package = do.Package(
 	do.Lazy(NewHTTPServer),
-	do.Lazy(NewGRPCServer),
 )
 
 // HTTPServer 包装 *http.Server；依赖经 do:"" 标签由容器在构造期注入，

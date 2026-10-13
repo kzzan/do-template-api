@@ -48,7 +48,6 @@ func main() {
 
 	httpSrv := do.MustInvoke[*server.HTTPServer](container)
 	logger := do.MustInvoke[*log.Logger](container)
-	conf := do.MustInvoke[*viper.Viper](container)
 
 	go func() {
 		if err := httpSrv.Start(); err != nil {
@@ -56,20 +55,9 @@ func main() {
 		}
 	}()
 
-	evt := logger.Info().Str("http", "http://"+httpSrv.Addr)
-	if conf.GetBool("grpc.enabled") {
-		// 懒加载容器：不 Invoke 即不实例化，关闭时也不参与
-		grpcSrv := do.MustInvoke[*server.GRPCServer](container)
-		go func() {
-			if err := grpcSrv.Start(); err != nil {
-				stdlog.Printf("grpc server exited: %v", err)
-			}
-		}()
-		evt = evt.Str("grpc", grpcSrv.Addr())
-	}
-	evt.Msg("server started")
+	logger.Info().Str("http", "http://"+httpSrv.Addr).Msg("server started")
 
-	// 关闭限时 10s：超时后 GRPCServer 强制断开在途长流，避免 GracefulStop 永久阻塞
+	// 关闭限时 10s
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_, report := container.ShutdownOnSignalsWithContext(shutdownCtx, syscall.SIGINT, syscall.SIGTERM)

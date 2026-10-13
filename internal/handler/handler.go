@@ -11,7 +11,6 @@ import (
 // Package 注册本层全部服务。
 var Package = do.Package(
 	do.Lazy(NewUserHandler),
-	do.Lazy(NewUserGrpc),
 )
 
 // GetUserIDFromCtx 从 gin 上下文取出 JWT claims 中的用户 ID。

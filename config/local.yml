@@ -2,10 +2,6 @@ env: local
 http:
   host: 127.0.0.1
   port: 8000
-grpc:
-  enabled: true        # 置 false 则不启动 gRPC 服务（不占端口、不实例化）
-  host: 127.0.0.1
-  port: 9500
 security:
   jwt:
     key: QQYnRFerJTSEcrfB89fw8prOaObmrch8

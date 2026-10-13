@@ -1,6 +1,6 @@
 # do-template-api
 
-单体 Go 后端模板：**gin + sqlx + zerolog + samber/do/v2**（+ gRPC / WebSocket / redis 预留），
+单体 Go 后端模板：**gin + sqlx + zerolog + samber/do/v2**（+ WebSocket / redis 预留），
 结构参考 [nunu-layout-advanced](../nunu-layout-advanced)、do 用法对齐 [samber/do-template-api](https://github.com/samber/do-template-api)。
 
 ## 快速开始
@@ -27,39 +27,29 @@ curl localhost:8000/v1/user -H "Authorization: Bearer <accessToken>"
 ```
 cmd/server/       入口：do.New(packages...) 装配 + 信号等待
 cmd/migration/    执行 storage/schema.sql（幂等）
-api/proto/userv1/ proto 源文件（make proto 重新生成）
-api/pb/userv1/    protoc 生成的 pb 代码
 api/v1/           HTTP 请求/响应 DTO 与业务错误码
 internal/
-  handler/        HTTP 处理器 + gRPC 服务实现（UserGrpc，预留）+ WebSocket（WsEcho，预留）
+  handler/        HTTP 处理器 + WebSocket（WsEcho，预留）
   service/        业务逻辑
   repository/     sqlx 数据访问 + redis（懒加载）+ ctx 事务传播
   model/          数据模型（db 标签）
   middleware/     Recovery / 访问日志 / CORS / JWT
-  server/         http.go（gin + /ws）+ grpc.go（gRPC 预留）+ 优雅启停
+  server/         http.go（gin + /ws）+ 优雅启停
 pkg/              config(viper) / log(zerolog) / jwt
 config/           local.yml / prod.yml
 storage/          sqlite 数据文件 + schema.sql
 docker-compose.yml  本地基础设施（redis 默认；postgres/mysql 按 profile）
 ```
 
-## gRPC 与 WebSocket（预留入口）
+## WebSocket（预留入口）
 
-- proto：`api/proto/userv1/user.proto`，`make proto` 重新生成（需 protoc + protoc-gen-go/go-grpc）
-- 服务端：`server.GRPCServer`（默认 :9500），注册 `userv1.UserService` + 标准 health + reflection（可用 grpcurl 直连调试）
-- **一元**：`GetProfile` 复用 service 层查用户
-- **长连接**：`SubscribeHeartbeat` 服务端流，按 `interval_ms` 推送 `count` 次，客户端断开即停
 - **WebSocket**：`GET /ws` 回显端点（gorilla/websocket），升级/读写/关闭全链路已验证
 
 ## 请求链路
 
 **业务主链路**：路由（server 内联注册）→ middleware → handler → service → repository → DB。
-gRPC 与 WebSocket 为**预留入口**，不参与业务主链路：
+WebSocket 为**预留入口**，不参与业务主链路：
 
-- **gRPC 预留**（`server.GRPCServer`，默认 :9500）：独立入口供外部 gRPC 调用方直连；
-  `grpc.enabled: false` 可整体关闭（不占端口、不实例化）；
-  proto 在 `api/proto/userv1/`（`make proto` 重新生成），`handler.UserGrpc` 复用 service 层；
-  已含一元（GetProfile）与服务端流（SubscribeHeartbeat 长连接示例）、标准 health、reflection（grpcurl 可直连）
 - **WebSocket 预留**（`GET /ws`）：gorilla/websocket 回显端点，验证升级/读写/关闭全链路；
   gorilla Upgrade 会清除 conn deadline，30s HTTP 超时不影响长连接；业务化时拆 hub/会话并收紧 CheckOrigin
 
